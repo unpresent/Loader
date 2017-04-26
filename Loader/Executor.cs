@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -11,12 +11,13 @@ using System.Windows.Forms;
 namespace Loader
 {
 
+    [SuppressMessage("ReSharper", "LocalizableElement")]
     class Executor
     {
         // -----------------------------------------------------------
         #region Константы
         // -----------------------------------------------------------
-        private const string CStorageProviderFilterAll = "*";
+        // private const string CStorageProviderFilterAll = "*";
         // -----------------------------------------------------------
         #endregion
         // -----------------------------------------------------------
@@ -70,9 +71,6 @@ namespace Loader
         private string PathToDestination
         { get; }
 
-        private string PathInStorage
-        { get; }
-
         /// <summary>
         /// Приложение, которое надо запустить (относительно пути Path)
         /// </summary>
@@ -108,8 +106,8 @@ namespace Loader
         public void Run()
         {
             // Вешаем событие на то, что форма отобразилась
-            ProgressForm.Activated -= this.FormActivated;
-            ProgressForm.Activated += this.FormActivated;
+            ProgressForm.Activated -= FormActivated;
+            ProgressForm.Activated += FormActivated;
 
             // Запуск формы для отображения прогресса
             Application.Run(ProgressForm);
@@ -124,7 +122,7 @@ namespace Loader
             mFormActivated = true;
 
             // Запуск копировальщика
-            await Task.Run(() => this.InternalRun());
+            await Task.Run(() => InternalRun());
         }
 
         private void InternalRun()
@@ -145,6 +143,10 @@ namespace Loader
                 // Копирование файлов
                 NotifyCaption("Копирование файлов:");
                 InternalFilesCopy();
+
+                // Удаление лишних
+                NotifyCaption("Удаление лишних:");
+                // InternalCleanup();
 
                 // Запуск приложения
                 NotifyCaption("Запуск приложения.");
@@ -215,21 +217,30 @@ namespace Loader
 
         private void InternalFilesCopy()
         {
-            string vDirectory = Path.GetDirectoryName(PathToSource);
-            int vFilesCount = SourceFiles.Count;
-            int i = -1;
+            var vDirectory = Path.GetDirectoryName(PathToSource);
+            if (vDirectory == null)
+            {
+                return;
+            }
+
+            var vFilesCount = SourceFiles.Count;
+            var i = -1;
 
             foreach (FileInfo vFile in SourceFiles)
             {
                 i++;
+                if (vFile.DirectoryName == null)
+                {
+                    continue;
+                }
 
                 // Получаем относительный (внутри папки PathToSource) путь к файлу
-                string vLocalPathToFile = vFile.DirectoryName.Replace(vDirectory, string.Empty);
+                var vLocalPathToFile = vFile.DirectoryName.Replace(vDirectory, string.Empty);
 
-                Notify(vLocalPathToFile + vFile.Name, i * 100 / vFilesCount);
+                Notify(vLocalPathToFile + "\\" + vFile.Name, i * 100 / vFilesCount);
 
                 // Формируем путь в получателе
-                string vDestPathToFile = (!string.IsNullOrEmpty(vLocalPathToFile)) ? (vLocalPathToFile.Substring(1) + "/") : string.Empty;
+                var vDestPathToFile = (!string.IsNullOrEmpty(vLocalPathToFile)) ? (vLocalPathToFile.Substring(1) + "/") : string.Empty;
 
                 // При необходимости создаем новую папку в папке получателя
                 if (!string.IsNullOrEmpty(vDestPathToFile) && (!mDestinationFolders.Contains(vDestPathToFile)))
@@ -237,14 +248,14 @@ namespace Loader
                     StorageProvider.CreateDirectory(vDestPathToFile);
                 }
 
-                string vFileDest = vDestPathToFile + vFile.Name;
+                var vFileDest = vDestPathToFile + vFile.Name;
 
                 // Удаляем файл из списка кандидатов на удаление
                 mFilesForDelete.Remove(vFileDest);
 
                 if (StorageProvider.FileExists(vFileDest))
                 {
-                    FileInfo vFI = StorageProvider.GetFileInfo(vFileDest);
+                    var vFI = StorageProvider.GetFileInfo(vFileDest);
                     if (Comparer.Equals(vFI, vFile))
                     {
                         continue;
@@ -261,14 +272,15 @@ namespace Loader
         /// </summary>
         private void InternalLaunchApplication()
         {
-            string vAppFile = StorageProvider.Root + AppName;
-            if (vAppFile == null)
+            var vAppFile = StorageProvider.Root + AppName;
+            if (string.IsNullOrEmpty(vAppFile))
             {
                 throw new Exception($"Не удалось найти файл приложения {AppName}");
             }
 
-            ProcessStartInfo vProccess = new ProcessStartInfo()
+            var vProccess = new ProcessStartInfo()
             {
+                // ReSharper disable once AssignNullToNotNullAttribute
                 WorkingDirectory = Path.GetDirectoryName(vAppFile),
                 FileName = Path.GetFileName(vAppFile)
             };
@@ -298,7 +310,6 @@ namespace Loader
 
         private void NotifyCaption(string aCaption)
         {
-            //*
             SynchronizationContext.Post
             (
                 aPost =>
@@ -307,35 +318,32 @@ namespace Loader
                     ProgressForm.ProgressDescription = string.Empty;
                     ProgressForm.ProgressValue = -1;
                 },
-                (object)aCaption
+                aCaption
             );
-            //*/
         }
         private void Notify(string aDescription, int aPercent)
         {
-            //*
             SynchronizationContext.Post
             (
                 aPost =>
                 {
-                    ExecutorShortState vState = (ExecutorShortState)aPost;
+                    var vState = (ExecutorShortState)aPost;
                     ProgressForm.ProgressDescription = vState.Description;
                     ProgressForm.ProgressValue = vState.Percent;
                 },
                 new ExecutorShortState(aDescription, aPercent)
             );
-            //*/
         }
         // -----------------------------------------------------------
         #endregion
         // -----------------------------------------------------------
 
-        class ExecutorShortState
+        private class ExecutorShortState
         {
             public ExecutorShortState(string aDescription, int aPercent)
             {
-                this.Percent = aPercent;
-                this.Description = aDescription;
+                Percent = aPercent;
+                Description = aDescription;
             }
             public string Description { get; }
             public int Percent { get; }
@@ -343,23 +351,3 @@ namespace Loader
     }
     
 }
-
-
-/*
-        public FileInfo GetStorageFileInfo(string file)
-        {
-            using (IsolatedStorageFileStream stream = isoStore.OpenFile(file, FileMode.Open))
-            {
-                return GetFileInfoFromStream(stream);
-            }   
-        }
-  
-  private FileInfo GetFileInfoFromStream(FileStream stream)
-        {
-            return new FileInfo(
-                stream.GetType()
-                    .GetField("m_FullPath", BindingFlags.Instance | BindingFlags.NonPublic)
-                    .GetValue(stream)
-                    .ToString());
-        }
-*/
