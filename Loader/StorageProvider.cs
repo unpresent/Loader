@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.IsolatedStorage;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Loader
 {
@@ -49,10 +44,8 @@ namespace Loader
         /// <returns></returns>
         public string[] GetAllDirectories()
         {
-            List<string> vDirectories = new List<string>();
-
-            vDirectories = new List<string>(Directory.GetDirectories(Root));
-            int i = 0;
+            var vDirectories = new List<string>(Directory.GetDirectories(Root));
+            var i = 0;
             while (i < vDirectories.Count)
             {
                 // Добавляем субпапки
@@ -64,6 +57,8 @@ namespace Loader
                 i++;
             }
 
+            vDirectories.Add(string.Empty);
+
             return vDirectories.ToArray();
         }
 
@@ -73,13 +68,13 @@ namespace Loader
         /// <returns></returns>
         public string[] GetAllFiles()
         {
-            List<string> vFiles = new List<string>();
-            foreach (string vDir in GetAllDirectories())
+            var vFiles = new List<string>();
+            foreach (var vDir in GetAllDirectories())
             {
                 vFiles.AddRange(Directory.GetFiles(Root + vDir).ToArray());
             }
 
-            for (int i = 0; i < vFiles.Count; i++)
+            for (var i = 0; i < vFiles.Count; i++)
             {
                 vFiles[i] = vFiles[i].Replace(Root, string.Empty);
             }
@@ -100,10 +95,10 @@ namespace Loader
         public void SaveFile(string aSourceName, string aFileName)
         {
             File.Copy(aSourceName, Root + aFileName, true);
-            FileInfo vNewFileInfo = new FileInfo(Root + aFileName);
-            FileInfo vOldFileInfo = new FileInfo(aSourceName);
-            vNewFileInfo.CreationTime = vOldFileInfo.CreationTime;
-            vNewFileInfo.LastWriteTime = vOldFileInfo.LastWriteTime;
+            var vDestination = new FileInfo(Root + aFileName);
+            var vSource = new FileInfo(aSourceName);
+            vDestination.CreationTime = vSource.CreationTime;
+            vDestination.LastWriteTime = vSource.LastWriteTime;
         }
 
         public FileInfo GetFileInfo(string aFileName)

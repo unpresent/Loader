@@ -12,6 +12,9 @@ namespace Loader
 {
 
     [SuppressMessage("ReSharper", "LocalizableElement")]
+    [SuppressMessage("ReSharper", "ConvertPropertyToExpressionBody")]
+    [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     class Executor
     {
         // -----------------------------------------------------------
@@ -24,7 +27,8 @@ namespace Loader
         #region Поля
         // -----------------------------------------------------------
         private bool mFormActivated;
-        private readonly List<FileInfo> mSourceFiles = new List<FileInfo>();
+        private readonly List<string> mCopyFrom = new List<string>();
+        private readonly List<string> mCopyTo = new List<string>();
         private readonly List<string> mFilesForDelete = new List<string>();
         private string[] mDestinationFolders;
         private string[] mDestinationFiles;
@@ -92,8 +96,14 @@ namespace Loader
         private Comparer Comparer
         { get; }
 
-        private List<FileInfo> SourceFiles
-        { get { return mSourceFiles; } }
+        private List<string> CopyFrom
+        { get { return mCopyFrom; } }
+
+        private List<string> CopyTo
+        { get { return mCopyTo; } }
+
+        private List<string> FilesForDelete
+        { get { return mFilesForDelete; } }
         // -----------------------------------------------------------
         #endregion
         // -----------------------------------------------------------
@@ -146,7 +156,7 @@ namespace Loader
 
                 // Удаление лишних
                 NotifyCaption("Удаление лишних:");
-                // InternalCleanup();
+                InternalCleanup();
 
                 // Запуск приложения
                 NotifyCaption("Запуск приложения.");
@@ -158,7 +168,7 @@ namespace Loader
                 (
                     aPost =>
                     {
-                        IOException e = (IOException)aPost;
+                        var e = (IOException)aPost;
                         MessageBox.Show("Ошибка", e.Message + "\n" + e.StackTrace, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     },
                     ex
@@ -170,7 +180,7 @@ namespace Loader
                 (
                     aPost =>
                     {
-                        Exception e = (Exception)aPost;
+                        var e = (Exception)aPost;
                         MessageBox.Show("Ошибка", e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     },
                     ex
@@ -197,7 +207,7 @@ namespace Loader
             mDestinationFiles = StorageProvider.GetAllFiles();
 
             // Пока кандидатами на удаление являются все файлы в получателе
-            mFilesForDelete.AddRange(mDestinationFiles);
+            FilesForDelete.AddRange(mDestinationFiles);
         }
 
         /// <summary>
@@ -205,28 +215,21 @@ namespace Loader
         /// </summary>
         private void InternalPrepareSourceFilesList()
         {
-            FileInfo[] vFiles = FileSystemProvider.ListFiles(PathToSource);
-            mSourceFiles.Clear();
+            var vFiles = FileSystemProvider.ListFiles(PathToSource);
+            CopyFrom.Clear();
+            CopyTo.Clear();
 
-            // TODO: Добавить сравнение с получателем
-            foreach (var vItem in vFiles)
-            {
-                mSourceFiles.Add(vItem);
-            }
-        }
-
-        private void InternalFilesCopy()
-        {
             var vDirectory = Path.GetDirectoryName(PathToSource);
             if (vDirectory == null)
             {
                 return;
             }
 
-            var vFilesCount = SourceFiles.Count;
+            var vFilesCount = vFiles.Length;
             var i = -1;
 
-            foreach (FileInfo vFile in SourceFiles)
+            // TODO: Добавить сравнение с получателем
+            foreach (var vFile in vFiles)
             {
                 i++;
                 if (vFile.DirectoryName == null)
@@ -240,7 +243,7 @@ namespace Loader
                 Notify(vLocalPathToFile + "\\" + vFile.Name, i * 100 / vFilesCount);
 
                 // Формируем путь в получателе
-                var vDestPathToFile = (!string.IsNullOrEmpty(vLocalPathToFile)) ? (vLocalPathToFile.Substring(1) + "/") : string.Empty;
+                var vDestPathToFile = (!string.IsNullOrEmpty(vLocalPathToFile)) ? (vLocalPathToFile.Substring(1) + "\\") : string.Empty;
 
                 // При необходимости создаем новую папку в папке получателя
                 if (!string.IsNullOrEmpty(vDestPathToFile) && (!mDestinationFolders.Contains(vDestPathToFile)))
@@ -251,19 +254,46 @@ namespace Loader
                 var vFileDest = vDestPathToFile + vFile.Name;
 
                 // Удаляем файл из списка кандидатов на удаление
-                mFilesForDelete.Remove(vFileDest);
+                FilesForDelete.Remove(vFileDest);
 
                 if (StorageProvider.FileExists(vFileDest))
                 {
                     var vFI = StorageProvider.GetFileInfo(vFileDest);
-                    if (Comparer.Equals(vFI, vFile))
+                    if
+                    (
+                           (vFI.Name == vFile.Name)
+                        && (vFI.LastWriteTime == vFile.LastWriteTime)
+                        && (vFI.CreationTime == vFile.CreationTime)
+                    )
                     {
                         continue;
                     }
                 }
 
+                CopyFrom.Add(vFile.FullName);
+                CopyTo.Add(vFileDest);
+            }
+        }
+
+        private void InternalFilesCopy()
+        {
+            var vDirectory = Path.GetDirectoryName(PathToSource);
+            if (vDirectory == null)
+            {
+                return;
+            }
+
+            var vFilesCount = CopyFrom.Count;
+
+            for (var i = 0; i < vFilesCount; i++)
+            {
+                var vFileFrom = CopyFrom[i];
+                var vFileTo = CopyTo[i];
+
+                Notify(vFileFrom.Replace(PathToSource, string.Empty), i * 100 / vFilesCount);
+
                 // Копирование файла
-                StorageProvider.SaveFile(vFile.FullName, vFileDest);
+                StorageProvider.SaveFile(vFileFrom, vFileTo);
             }
         }
 
