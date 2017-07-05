@@ -49,6 +49,7 @@
             this.mProgressPanel.AppearanceCaption.Options.UseFont = true;
             this.mProgressPanel.AppearanceDescription.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.mProgressPanel.AppearanceDescription.Options.UseFont = true;
+            this.mProgressPanel.BarAnimationElementThickness = 2;
             this.mProgressPanel.Caption = "Пожалуйста, подождите. Идет подготовка к запуску приложения.";
             this.mProgressPanel.Description = "Копирование файлов...";
             this.mProgressPanel.Dock = System.Windows.Forms.DockStyle.Top;
@@ -74,7 +75,6 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Loader";
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 

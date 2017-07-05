@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using System.IO;
 
 namespace Loader
 {
@@ -14,24 +7,24 @@ namespace Loader
     /// </summary>
     interface IComparer
     {
-        bool Equals(string oldFile, string newFile);
-        bool Equals(FileInfo oldFile, FileInfo newFile);
+        bool Equals(string aOldFile, string aNewFile);
+        bool Equals(FileInfo aOldFile, FileInfo aNewFile);
     }
 
     class Comparer : IComparer
     {
-        public bool Equals(string oldFile, string newFile)
+        public bool Equals(string aOldFile, string aNewFile)
         {
             return Equals(
-                new FileInfo(oldFile), 
-                new FileInfo(newFile));
+                new FileInfo(aOldFile), 
+                new FileInfo(aNewFile));
         }
 
-        public bool Equals(FileInfo oldFile, FileInfo newFile)
+        public bool Equals(FileInfo aOldFile, FileInfo aNewFile)
         {
-            return oldFile.CreationTime == newFile.CreationTime
-                && oldFile.LastWriteTime == newFile.LastWriteTime
-                && oldFile.Length == newFile.Length;
+            return aOldFile.CreationTime == aNewFile.CreationTime
+                && aOldFile.LastWriteTime == aNewFile.LastWriteTime
+                && aOldFile.Length == aNewFile.Length;
         }
     }
 }

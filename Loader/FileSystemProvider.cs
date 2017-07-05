@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Loader
 {
     interface IFileSystemProvider
     {
-        void DeleteEmptyDirectories(string dir, string root = null);
-        FileInfo[] ListFiles(string v);
+        void DeleteEmptyDirectories(string aDir, string aRoot = null);
+        FileInfo[] ListFiles(string aPath);
     }
 
     class FileSystemProvider : IFileSystemProvider
@@ -18,20 +14,21 @@ namespace Loader
         /// <summary>
         /// рекурсивно удаляет пустые папки
         /// </summary>
-        /// <param name="root">корень</param>
-        public void DeleteEmptyDirectories(string dir, string root)
+        /// <param name="aDir"></param>
+        /// <param name="aRoot">корень</param>
+        public void DeleteEmptyDirectories(string aDir, string aRoot)
         {
-            if (Directory.GetDirectories(dir).Length + Directory.GetFiles(dir).Length < 1)
+            if (Directory.GetDirectories(aDir).Length + Directory.GetFiles(aDir).Length < 1)
             {
-                Directory.Delete(dir);
+                Directory.Delete(aDir);
                 // после удаления папки вернёмся в корень - проверить ещё раз не освободилась ли какая-нибудь папка
-                DeleteEmptyDirectories(root ?? dir, root ?? dir);
+                DeleteEmptyDirectories(aRoot ?? aDir, aRoot ?? aDir);
             }
             else
             {
-                foreach (string d in Directory.GetDirectories(dir))
+                foreach (string vDir in Directory.GetDirectories(aDir))
                 {
-                    DeleteEmptyDirectories(d, root ?? dir);
+                    DeleteEmptyDirectories(vDir, aRoot ?? aDir);
                 }
             }
         }
@@ -39,32 +36,32 @@ namespace Loader
         /// <summary>
         /// извлекает массив FileInfo из дирректории
         /// </summary>
-        public FileInfo[] ListFiles(string path)
+        public FileInfo[] ListFiles(string aPath)
         {
-            List<FileInfo> files = new List<FileInfo>();
-            path = Path.GetDirectoryName(path);
-            return GetFiles(path, files);
+            List<FileInfo> vFiles = new List<FileInfo>();
+            aPath = Path.GetDirectoryName(aPath);
+            return GetFiles(aPath, vFiles);
         }
 
-        private FileInfo[] GetFiles(string path, List<FileInfo> files)
+        private FileInfo[] GetFiles(string aPath, List<FileInfo> aFiles)
         {
-            foreach (string f in Directory.GetFiles(path))
+            foreach (string vFile in Directory.GetFiles(aPath))
             {
-                files.Add(new FileInfo(f));
+                aFiles.Add(new FileInfo(vFile));
             }
-            GoDeeper(path, files);
-            return files.ToArray();
+            GoDeeper(aPath, aFiles);
+            return aFiles.ToArray();
         }
 
-        private void GoDeeper(string s, List<FileInfo> files)
+        private void GoDeeper(string aPath, List<FileInfo> aFiles)
         {
-            foreach (string d in Directory.GetDirectories(s))
+            foreach (var vDir in Directory.GetDirectories(aPath))
             {
-                foreach (string f in Directory.GetFiles(d))
+                foreach (var vFile in Directory.GetFiles(vDir))
                 {
-                    files.Add(new FileInfo(f));
+                    aFiles.Add(new FileInfo(vFile));
                 }
-                GoDeeper(d, files);
+                GoDeeper(vDir, aFiles);
             }
         }
     }

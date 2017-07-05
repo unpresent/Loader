@@ -162,28 +162,32 @@ namespace Loader
                 NotifyCaption("Запуск приложения.");
                 InternalLaunchApplication();
             }
-            catch (IOException ex)
+            catch (IOException vEx)
             {
                 SynchronizationContext.Post
                 (
                     aPost =>
                     {
-                        var e = (IOException)aPost;
-                        MessageBox.Show("Ошибка", e.Message + "\n" + e.StackTrace, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        var vE = (IOException)aPost;
+                        if (vE == null)
+                        {
+                            throw new ArgumentNullException(nameof(vE));
+                        }
+                        MessageBox.Show("Ошибка", vE.Message + "\n" + vE.StackTrace, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     },
-                    ex
+                    vEx
                 );
             }
-            catch (Exception ex)
+            catch (Exception vEx)
             {
                 SynchronizationContext.Post
                 (
                     aPost =>
                     {
-                        var e = (Exception)aPost;
-                        MessageBox.Show("Ошибка", e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        var vE = (Exception)aPost;
+                        MessageBox.Show("Ошибка", vE.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     },
-                    ex
+                    vEx
                 );
             }
 

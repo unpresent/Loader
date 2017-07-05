@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -31,8 +30,8 @@ namespace Loader
         // -----------------------------------------------------------
         private static bool mParsed;
         private static bool mValidated;
-        private static List<string> mOtherParams = new List<string>();
-        private static readonly SortedList<string, string> mParams = new SortedList<string, string>();
+        private static readonly List<string> OtherParams = new List<string>();
+        private static readonly SortedList<string, string> Params = new SortedList<string, string>();
         // -----------------------------------------------------------
         #endregion
         // -----------------------------------------------------------
@@ -47,7 +46,7 @@ namespace Loader
             get
             {
                 CheckValidated();
-                string vResult = mParams[CParamPath];
+                string vResult = Params[CParamPath];
                 if (vResult.PadRight(1) != "\\")
                 {
                     vResult = vResult + "\\";
@@ -64,7 +63,7 @@ namespace Loader
             get
             {
                 CheckValidated();
-                return mParams[CParamApp];
+                return Params[CParamApp];
             }
         }
 
@@ -76,7 +75,7 @@ namespace Loader
             get
             {
                 CheckValidated();
-                string vResult = mParams[CParamDest];
+                string vResult = Params[CParamDest];
                 if (vResult.PadRight(1) != "\\")
                 {
                     vResult = vResult + "\\";
@@ -95,7 +94,7 @@ namespace Loader
                 CheckValidated();
 
                 var vResult = string.Empty;
-                foreach (var vItem in mOtherParams)
+                foreach (var vItem in OtherParams)
                 {
                     vResult += CParamsDelimeter + vItem;
                 }
@@ -124,22 +123,22 @@ namespace Loader
                     if (COurParams.Contains(vParamName))
                     {
                         vIsParamValue = true;
-                        mParams.Add(vParamName, null);
+                        Params.Add(vParamName, null);
                     }
                     else
                     {
-                        mOtherParams.Add(vArg);
+                        OtherParams.Add(vArg);
                     }
                 }
                 else if (vIsParamValue)
                 {
-                    mParams[vParamName] = vArg;
+                    Params[vParamName] = vArg;
                     vParamName = null;
                     vIsParamValue = false;
                 }
                 else
                 {
-                    mOtherParams.Add(vArg);
+                    OtherParams.Add(vArg);
                 }
             }
 
@@ -155,9 +154,9 @@ namespace Loader
             CheckParsed();
 
             // Если отсутсвует хотя бы один обязательный параметр
-            if (CMandatoryParams.Any(aItem => !mParams.ContainsKey(aItem)))
+            if (CMandatoryParams.Any(aItem => !Params.ContainsKey(aItem)))
             {
-                MessageBox.Show("Неверные параметры запуска:\n-PATH - путь к ресурсам,\n-APP - исполняемый EXE-файл\n\nНапример: Loader.exe -PATH D:/dir -APP Application.exe\r\nЗапрещено указывать в качестве ресурса корень диска", "Loader");
+                MessageBox.Show(@"Неверные параметры запуска:\n-PATH - путь к ресурсам,\n-APP - исполняемый EXE-файл\n\nНапример: Loader.exe -PATH D:/dir -APP Application.exe\r\nЗапрещено указывать в качестве ресурса корень диска", @"Loader");
                 return false;
             }
 
